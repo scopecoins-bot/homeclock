@@ -1,0 +1,27 @@
+[Unit]
+Description=HomeClock server API (tailnet-only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/apps/homeclock/apps/server
+Environment=NODE_ENV=production
+Environment=PORT=8788
+Environment=HOST=127.0.0.1
+Environment=DATABASE_PATH=%h/apps/homeclock/data/homeclock.db
+Environment=SOMTODAY_MCP_CMD=%h/.nvm/versions/node/v22.23.1/bin/node
+Environment=SOMTODAY_MCP_ARGS=%h/agent-stack/somtoday-mcp/dist/index.js
+Environment=SOMTODAY_MCP_CWD=%h/agent-stack/somtoday-mcp
+Environment=LOG_LEVEL=info
+ExecStart=%h/.nvm/versions/node/v22.23.1/bin/node dist/index.js
+Restart=on-failure
+RestartSec=3
+
+# Hardening: loopback-only service, no privileges needed.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=default.target

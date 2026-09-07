@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+dist-tests/
+build/
+.expo/
+ios/
+android/
+*.tsbuildinfo
+
+# runtime data
+*.db
+*.db-wal
+*.db-shm
+data/
+logs/
+
+# secrets
+.env
+.env.local
+.env*.local
+
+# tools
+.eas/
+.easignore
+npm-debug.log*
+
+# os
+.DS_Store
+Thumbs.db

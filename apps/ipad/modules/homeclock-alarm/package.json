@@ -1,0 +1,7 @@
+{
+  "name": "homeclock-alarm",
+  "version": "1.0.0",
+  "description": "HomeClock native alarm module (AlarmKit on iPadOS 26+, notification fallback)",
+  "main": "index.ts",
+  "private": true
+}

@@ -1,0 +1,12 @@
+{
+  "name": "homeclock",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HomeClock — premium iPad bedside alarm clock + school dashboard, backed by the bossp server over Tailscale",
+  "scripts": {
+    "server:typecheck": "cd apps/server && npm run typecheck",
+    "server:test": "cd apps/server && npm test",
+    "server:build": "cd apps/server && npm run build",
+    "ipad:typecheck": "cd apps/ipad && npx tsc --noEmit"
+  }
+}
