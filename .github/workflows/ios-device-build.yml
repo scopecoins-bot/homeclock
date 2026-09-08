@@ -118,6 +118,14 @@ jobs:
           file "$APP/HomeClock"
           lipo -info "$APP/HomeClock"
 
+      - name: Export JS bundle (expo export, Hermes)
+        run: |
+          set -euo pipefail
+          cd apps/ipad
+          npx expo export --platform ios --dev false --output-dir expo-export
+          echo "=== export inhoud ==="
+          find expo-export -maxdepth 4 -name "*.hbc" | head -3
+
       - name: Embed dynamic pod frameworks (manual, deterministic)
         run: |
           set -uo pipefail
@@ -144,6 +152,15 @@ jobs:
               fi
             done
           done
+          echo "=== embed JS bundle ==="
+          HBC=$(find expo-export/_expo/static/js/ios -name "*.hbc" | head -1)
+          test -n "$HBC"
+          echo "bundle: $HBC ($(stat -f%z "$HBC") bytes)"
+          cp "$HBC" "$APP/main.jsbundle"
+          if [ -d expo-export/assets ]; then
+            cp -R expo-export/assets "$APP/assets"
+          fi
+          ls -la "$APP/main.jsbundle"
           echo "=== embedded now ==="
           ls "$APP/Frameworks"
           echo "=== still missing? ==="
