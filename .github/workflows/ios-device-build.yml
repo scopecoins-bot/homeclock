@@ -1,0 +1,207 @@
+name: HomeClock iOS device build (jailbreak)
+
+# Builds a real arm64 HomeClock.app for iphoneos (NOT simulator), signs it
+# ad-hoc with ldid, packages it as a rootless Dopamine .deb and uploads
+# artifacts. No Apple Developer account, no secrets, no App Store signing.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - "apps/ipad/**"
+      - "packages/shared/**"
+      - ".github/workflows/ios-device-build.yml"
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: List available Xcode versions
+        run: ls /Applications | grep -i xcode || true
+
+      - name: Select Xcode 26 (iPadOS 26 SDK, AlarmKit)
+        run: |
+          set -euo pipefail
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -z "$XC" ]; then
+            echo "::error::No Xcode 26 found; iPadOS 26 SDK / AlarmKit unavailable"
+            exit 1
+          fi
+          echo "Selecting $XC"
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+          SDKVER=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "iphoneos SDK version: $SDKVER"
+          MAJOR=${SDKVER%%.*}
+          if [ "${MAJOR:-0}" -lt 26 ]; then
+            echo "::error::iPadOS 26 SDK required, found $SDKVER"
+            exit 1
+          fi
+
+      - name: Verify AlarmKit framework exists in SDK
+        run: |
+          set -euo pipefail
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          FOUND=$(find "$SDK" -maxdepth 6 -name "AlarmKit.framework" | head -1 || true)
+          if [ -z "$FOUND" ]; then
+            echo "::error::AlarmKit.framework not found in SDK"
+            exit 1
+          fi
+          echo "AlarmKit: $FOUND"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build shared package
+        working-directory: packages/shared
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Install iPad app dependencies
+        working-directory: apps/ipad
+        run: npm install --no-audit --no-fund
+
+      - name: TypeScript check (iPad)
+        working-directory: apps/ipad
+        run: npx tsc --noEmit
+
+      - name: Expo prebuild (generates ios/ with autolinked native module)
+        working-directory: apps/ipad
+        run: |
+          npx expo prebuild --platform ios --no-install
+          echo "--- ios dir ---"
+          ls ios
+          echo "--- alarm module linked? ---"
+          grep -R "homeclock-alarm" ios/Podfile.properties.json ios/Pods/autolinking.json 2>/dev/null || \
+            find ios -name "HomeclockAlarm*" | head -5
+
+      - name: CocoaPods install
+        working-directory: apps/ipad/ios
+        run: pod install --repo-update
+
+      - name: Build HomeClock.app (iphoneos arm64, unsigned)
+        working-directory: apps/ipad/ios
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace HomeClock.xcworkspace \
+            -scheme HomeClock \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            EXPANDED_CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tail -40
+          APP=build/Build/Products/Release-iphoneos/HomeClock.app
+          test -d "$APP" || { echo "::error::HomeClock.app not produced"; exit 1; }
+          echo "--- binary ---"
+          file "$APP/HomeClock"
+          lipo -info "$APP/HomeClock"
+
+      - name: Ad-hoc sign with ldid (main binary + embedded frameworks)
+        run: |
+          set -euo pipefail
+          brew install ldid
+          APP=apps/ipad/ios/build/Build/Products/Release-iphoneos/HomeClock.app
+          # sign every executable inside the bundle, main binary last
+          find "$APP" -type f \( -name "*.dylib" -o -path "*.framework/*" \) | while read -r f; do
+            if file "$f" | grep -q "Mach-O"; then
+              ldid -S "$f"
+            fi
+          done
+          ldid -S "$APP/HomeClock"
+          echo "--- signature check ---"
+          ldid -e "$APP/HomeClock" || true
+          codesign -dv "$APP/HomeClock" 2>&1 | head -5 || true
+
+      - name: Package rootless .deb (/var/jb/Applications)
+        run: |
+          set -euo pipefail
+          VERSION=1.0.0
+          PKGDIR=dist/homeclock_${VERSION}_iphoneos-arm64
+          mkdir -p "$PKGDIR/DEBIAN" "$PKGDIR/var/jb/Applications"
+          cp -R apps/ipad/ios/build/Build/Products/Release-iphoneos/HomeClock.app \
+                "$PKGDIR/var/jb/Applications/"
+          cat > "$PKGDIR/DEBIAN/control" <<EOF
+          Package: nl.krimson.homeclock
+          Name: HomeClock
+          Version: ${VERSION}
+          Architecture: iphoneos-arm64
+          Description: iPad bedside alarm clock + school dashboard (tailnet-only bossp backend)
+          Maintainer: HomeClock Build <homeclock@bossp.local>
+          Author: HomeClock
+          Section: Utilities
+          Priority: optional
+          EOF
+          # no postinst scripts needed; uicache is run by deploy tooling
+          cd "$PKGDIR"
+          COPYFILE_DISABLE=1 tar czf ../control.tar.gz -C DEBIAN .
+          COPYFILE_DISABLE=1 tar czf ../data.tar.gz -C . var
+          cd ..
+          AR=$(command -v ar)
+          echo ar: "$AR"
+          rm -f nl.krimson.homeclock.deb
+          "$AR" -r nl.krimson.homeclock.deb debian-binary control.tar.gz data.tar.gz 2>/dev/null || \
+            python3 - "$PKGDIR" <<'PY'
+          import sys, os, subprocess
+          pkgdir = sys.argv[1]
+          out = "nl.krimson.homeclock.deb"
+          with open(out, "wb") as deb:
+              def entry(name, content=None, src=None):
+                  if content is not None:
+                      data = content.encode()
+                  else:
+                      with open(src, "rb") as f:
+                          data = f.read()
+                  header = "{:<16}{:<12}{:<6}{:<6}{:<10}{:<12}".format(
+                      name, "0", "0", "0", str(len(data)), "`\n").encode()
+                  deb.write(header)
+                  deb.write(data)
+                  if len(data) % 2:
+                      deb.write(b"\n")
+              entry("debian-binary", "2.0\n")
+              entry("control.tar.gz", src="control.tar.gz")
+              entry("data.tar.gz", src="data.tar.gz")
+          PY
+          # cleanup intermediate tars when ar succeeded
+          if [ -s nl.krimson.homeclock.deb ]; then
+            rm -f control.tar.gz data.tar.gz
+            echo "deb built:"
+            ls -la nl.krimson.homeclock.deb
+            dpkg-deb -I nl.krimson.homeclock.deb 2>/dev/null || ar t nl.krimson.homeclock.deb
+          fi
+
+      - name: Collect artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          APP=apps/ipad/ios/build/Build/Products/Release-iphoneos/HomeClock.app
+          COPYFILE_DISABLE=1 tar czf artifacts/HomeClock-app.tar.gz -C "$(dirname "$APP")" "$(basename "$APP")"
+          mv nl.krimson.homeclock.deb artifacts/ 2>/dev/null || true
+          {
+            echo "commit: $GITHUB_SHA"
+            echo "xcode: $(xcodebuild -version | tr '\n' ' ')"
+            echo "sdk: $(xcrun --sdk iphoneos --show-sdk-version)"
+            echo "arch: $(lipo -info apps/ipad/ios/build/Build/Products/Release-iphoneos/HomeClock.app/HomeClock 2>&1)"
+          } > artifacts/build-metadata.txt
+          ls -la artifacts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: homeclock-ios-${{ github.run_number }}
+          path: artifacts/*
+          if-no-files-found: error
