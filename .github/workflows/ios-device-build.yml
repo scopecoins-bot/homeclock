@@ -131,6 +131,7 @@ jobs:
           export EXECUTABLE_PATH="HomeClock.app/HomeClock"
           export PODS_ROOT="$PWD/apps/ipad/ios/Pods"
           export PODS_CONFIGURATION_BUILD_DIR="$BUILT_PRODUCTS_DIR"
+          export CONFIGURATION_BUILD_DIR="$BUILT_PRODUCTS_DIR"
           export TARGET_BUILD_DIR="$BUILT_PRODUCTS_DIR"
           export CODE_SIGNING_ALLOWED=NO
           export EXPANDED_CODE_SIGN_IDENTITY=""
