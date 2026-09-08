@@ -70,6 +70,13 @@ interface AuthStatusResult {
   detail?: string;
 }
 
+interface SchedulePayload {
+  from?: string;
+  to?: string;
+  count?: number;
+  items?: McpScheduleItem[];
+}
+
 export class SomtodayService {
   state: SomtodayState = "unavailable";
   detail: string | null = null;
@@ -100,7 +107,12 @@ export class SomtodayService {
 
   async checkAuth(): Promise<SomtodayState> {
     try {
-      const result = await this.client.callTool<AuthStatusResult>("somtoday_auth_status", {});
+      const raw = await this.client.callTool<AuthStatusResult & { data?: AuthStatusResult }>(
+        "somtoday_auth_status",
+        {},
+      );
+      // The MCP's ok() helper nests the payload: { ok, data: {...} }.
+      const result = raw.data ?? raw;
       const authenticated =
         result.authenticated === true ||
         result.state === "ok" ||
@@ -123,10 +135,10 @@ export class SomtodayService {
   /** Fetch + persist schedule for [from, to]. Returns lesson count. */
   async refreshRange(from: string, to: string): Promise<number> {
     const fetchedAt = new Date().toISOString();
-    const payload = await this.client.callTool<{ from: string; to: string; count: number; items: McpScheduleItem[] }>(
-      "somtoday_get_schedule",
-      { from, to },
-    );
+    const raw = await this.client.callTool<
+      SchedulePayload & { data?: SchedulePayload }
+    >("somtoday_get_schedule", { from, to });
+    const payload = raw.data ?? raw;
     const items = payload.items ?? [];
     const lessons = items
       .map((item) => normalizeLesson(item, fetchedAt))

@@ -105,8 +105,31 @@ test("schedule flows from MCP tool into db and API", async () => {
   assert.ok(Array.isArray(body.lessons));
 });
 
-test("schedule is served from cache when MCP is offline", async () => {
+test("real MCP nested ok() wrapper format is unwrapped", async () => {
+  // The somtoday-mcp ok() helper returns { ok, data: {...} } — this guards the
+  // live integration shape (regression for the needs_auth-after-login bug).
   const items = loadFixture();
+  const h = await makeHarness(async (tool) => {
+    if (tool === "somtoday_auth_status") {
+      return {
+        ok: true,
+        data: { authenticated: true, apiUrl: "https://api.somtoday.nl" },
+      };
+    }
+    if (tool === "somtoday_get_schedule") {
+      return { ok: true, data: { from: "x", to: "y", count: items.length, items } };
+    }
+    throw new Error(`unexpected tool ${tool}`);
+  });
+
+  const state = await h.somtoday.checkAuth();
+  assert.equal(state, "ok");
+  const count = await h.somtoday.refreshWindow();
+  assert.ok(count >= items.length);
+  assert.equal(h.somtoday.state, "ok");
+});
+
+test("schedule is served from cache when MCP is offline", async () => {  const items = loadFixture();
   let calls = 0;
   const h = await makeHarness(async (tool) => {
     if (tool === "somtoday_auth_status") return { authenticated: true };
