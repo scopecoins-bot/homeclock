@@ -66,22 +66,18 @@ ssh bossp 'cd ~/apps/homeclock/apps/server && \
 
 Voer de 6-tekens code in de app in bij *Instellingen → Server*.
 
-### iPad-app ontwikkelen
+### iPad-app bouwen en installeren (jailbreak-pad)
 
 ```bash
-cd apps/ipad
-npm install
-npx expo start            # Expo Go is niet voldoende voor AlarmKit
+git push                                      # triggert macOS CI-build (Xcode 26, arm64)
+gh run watch && gh run download <run-id>      # .deb + .app artifact
+powershell -ExecutionPolicy Bypass -File deploy/deploy-ipad.ps1 -Ip <iPad-IP>
 ```
 
-Voor een echte build (custom dev client wegens native Swift-module):
-
-```bash
-npx eas build --platform ios --profile development   # fysiek iPad
-npx eas build --platform ios --profile simulator     # iOS-simulator
-```
-
-Zie [docs/IPAD.md](docs/IPAD.md) voor details.
+De doel-iPad is jailbroken (Dopamine, rootless); installatie gebeurt met
+`dpkg` + `uicache` — zonder Apple Developer-account. Zie
+[docs/IPAD.md](docs/IPAD.md) (EAS is een optioneel conventioneel alternatief,
+geen onderdeel van dit pad).
 
 ## Documentatie
 
