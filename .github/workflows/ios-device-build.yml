@@ -118,35 +118,23 @@ jobs:
           file "$APP/HomeClock"
           lipo -info "$APP/HomeClock"
 
-      - name: Embed dynamic pod frameworks (embed phase skipped with CODE_SIGNING_ALLOWED=NO)
+      - name: Embed dynamic pod frameworks (run pods frameworks.sh manually)
         run: |
           set -euo pipefail
           APP=apps/ipad/ios/build/Build/Products/Release-iphoneos/HomeClock.app
           echo "=== what does HomeClock link? ==="
-          otool -L "$APP/HomeClock" | head -30
-          echo "=== all rpaths ==="
-          otool -l "$APP/HomeClock" | grep -A 2 LC_RPATH || true
-          echo "=== pods frameworks script? ==="
-          ls "apps/ipad/ios/Pods/Target Support Files/Pods-HomeClock/" 2>/dev/null | grep -i framework || true
-          echo "=== all built frameworks anywhere in build/ ==="
-          find apps/ipad/ios/build -type d -name "*.framework" -not -path "*Intermediates.noindex*" 2>/dev/null | head -40
-          mkdir -p "$APP/Frameworks"
-          FOUND=0
-          while IFS= read -r fw; do
-            [ -e "$fw" ] || continue
-            # skip static frameworks (dylib-less): embed only dynamic ones
-            BIN="$fw/$(basename "${fw%.framework}")"
-            if [ -f "$BIN" ] && otool -l "$BIN" | grep -q MH_DYLIB; then
-              name=$(basename "$fw")
-              if [ ! -e "$APP/Frameworks/$name" ]; then
-                cp -R "$fw" "$APP/Frameworks/"
-              fi
-              FOUND=1
-            fi
-          done < <(find apps/ipad/ios/build -type d -name "*.framework" -not -path "*Intermediates.noindex*" 2>/dev/null)
+          otool -L "$APP/HomeClock" | grep -c "@rpath" || true
+          echo "=== run Pods-HomeClock-frameworks.sh ==="
+          export BUILT_PRODUCTS_DIR="$PWD/apps/ipad/ios/build/Build/Products/Release-iphoneos"
+          export CONTENTS_FOLDER_PATH="HomeClock.app"
+          export EXECUTABLE_PATH="HomeClock.app/HomeClock"
+          export CODE_SIGNING_ALLOWED=NO
+          export EXPANDED_CODE_SIGN_IDENTITY=""
+          bash "apps/ipad/ios/Pods/Target Support Files/Pods-HomeClock/Pods-HomeClock-frameworks.sh"
           echo "=== embedded frameworks ==="
-          ls "$APP/Frameworks" 2>/dev/null || echo "(none)"
-          echo "FOUND=$FOUND"
+          ls "$APP/Frameworks"
+          echo "=== count ==="
+          ls "$APP/Frameworks" | wc -l
 
       - name: Upload raw xcodebuild log (always)
         if: always()
