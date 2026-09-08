@@ -163,7 +163,6 @@ jobs:
           EOF
           # no postinst scripts needed; uicache is run by deploy tooling
           # deterministic Debian ar archive (macOS ar may add BSD-specific members)
-          cd "$PKGDIR/.."
           COPYFILE_DISABLE=1 tar czf control.tar.gz -C "$PKGDIR" DEBIAN
           COPYFILE_DISABLE=1 tar czf data.tar.gz -C "$PKGDIR" var
           python3 - <<'PY'
