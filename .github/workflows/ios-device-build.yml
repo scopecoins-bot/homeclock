@@ -162,42 +162,45 @@ jobs:
           Priority: optional
           EOF
           # no postinst scripts needed; uicache is run by deploy tooling
-          cd "$PKGDIR"
-          COPYFILE_DISABLE=1 tar czf ../control.tar.gz -C DEBIAN .
-          COPYFILE_DISABLE=1 tar czf ../data.tar.gz -C . var
-          cd ..
-          AR=$(command -v ar)
-          echo ar: "$AR"
-          rm -f nl.krimson.homeclock.deb
-          "$AR" -r nl.krimson.homeclock.deb debian-binary control.tar.gz data.tar.gz 2>/dev/null || \
-            python3 - "$PKGDIR" <<'PY'
-          import sys, os, subprocess
-          pkgdir = sys.argv[1]
-          out = "nl.krimson.homeclock.deb"
-          with open(out, "wb") as deb:
-              def entry(name, content=None, src=None):
-                  if content is not None:
-                      data = content.encode()
-                  else:
-                      with open(src, "rb") as f:
-                          data = f.read()
-                  header = "{:<16}{:<12}{:<6}{:<6}{:<10}{:<12}".format(
-                      name, "0", "0", "0", str(len(data)), "`\n").encode()
+          # deterministic Debian ar archive (macOS ar may add BSD-specific members)
+          cd "$PKGDIR/.."
+          COPYFILE_DISABLE=1 tar czf control.tar.gz -C "$PKGDIR" DEBIAN
+          COPYFILE_DISABLE=1 tar czf data.tar.gz -C "$PKGDIR" var
+          python3 - <<'PY'
+          import sys
+          members = [
+              ("debian-binary", b"2.0\n"),
+              ("control.tar.gz", open("control.tar.gz", "rb").read()),
+              ("data.tar.gz", open("data.tar.gz", "rb").read()),
+          ]
+          with open("nl.krimson.homeclock.deb", "wb") as deb:
+              deb.write(b"!<arch>\n")
+              for name, data in members:
+                  header = "{:<16}{:<12}{:<6}{:<6}{:<10}{:<2}".format(
+                      name + "/", "", "", "", str(len(data)), "`\n"
+                  ).encode()
                   deb.write(header)
                   deb.write(data)
                   if len(data) % 2:
                       deb.write(b"\n")
-              entry("debian-binary", "2.0\n")
-              entry("control.tar.gz", src="control.tar.gz")
-              entry("data.tar.gz", src="data.tar.gz")
+          # verify structure
+          with open("nl.krimson.homeclock.deb", "rb") as f:
+              assert f.read(8) == b"!<arch>\n"
+              names = []
+              while True:
+                  hdr = f.read(60)
+                  if len(hdr) < 60:
+                      break
+                  name = hdr[0:16].decode().rstrip(" /").rstrip("/")
+                  size = int(hdr[48:58].decode().strip())
+                  f.seek(size + (size % 2), 1)
+                  names.append(name)
+              print("deb members:", names)
+              assert names == ["debian-binary", "control.tar.gz", "data.tar.gz"], names
+          print("deb structure OK")
           PY
-          # cleanup intermediate tars when ar succeeded
-          if [ -s nl.krimson.homeclock.deb ]; then
-            rm -f control.tar.gz data.tar.gz
-            echo "deb built:"
-            ls -la nl.krimson.homeclock.deb
-            dpkg-deb -I nl.krimson.homeclock.deb 2>/dev/null || ar t nl.krimson.homeclock.deb
-          fi
+          rm -f control.tar.gz data.tar.gz
+          ls -la nl.krimson.homeclock.deb
 
       - name: Collect artifacts
         run: |
