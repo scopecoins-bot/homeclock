@@ -166,7 +166,6 @@ jobs:
           COPYFILE_DISABLE=1 tar czf control.tar.gz -C "$PKGDIR" DEBIAN
           COPYFILE_DISABLE=1 tar czf data.tar.gz -C "$PKGDIR" var
           python3 - <<'PY'
-          import sys
           members = [
               ("debian-binary", b"2.0\n"),
               ("control.tar.gz", open("control.tar.gz", "rb").read()),
@@ -175,9 +174,11 @@ jobs:
           with open("nl.krimson.homeclock.deb", "wb") as deb:
               deb.write(b"!<arch>\n")
               for name, data in members:
-                  header = "{:<16}{:<12}{:<6}{:<6}{:<10}{:<2}".format(
-                      name + "/", "", "", "", str(len(data)), "`\n"
+                  # ar header: name(16) date(12) uid(6) gid(6) mode(8) size(10) magic(2)
+                  header = "{:<16}{:<12}{:<6}{:<6}{:<8}{:<10}{:<2}".format(
+                      name + "/", "0", "0", "0", "100644", str(len(data)), "`\n"
                   ).encode()
+                  assert len(header) == 60, len(header)
                   deb.write(header)
                   deb.write(data)
                   if len(data) % 2:
