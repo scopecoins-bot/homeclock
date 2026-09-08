@@ -118,41 +118,39 @@ jobs:
           file "$APP/HomeClock"
           lipo -info "$APP/HomeClock"
 
-      - name: Embed dynamic pod frameworks (run pods frameworks.sh manually)
+      - name: Embed dynamic pod frameworks (manual, deterministic)
         run: |
-          set -euo pipefail
+          set -uo pipefail
           APP=apps/ipad/ios/build/Build/Products/Release-iphoneos/HomeClock.app
-          echo "=== what does HomeClock link? ==="
-          otool -L "$APP/HomeClock" | grep -c "@rpath" || true
-          echo "=== run Pods-HomeClock-frameworks.sh ==="
-          export BUILT_PRODUCTS_DIR="$PWD/apps/ipad/ios/build/Build/Products/Release-iphoneos"
-          export FRAMEWORKS_FOLDER_PATH="HomeClock.app/Frameworks"
-          export TOOLCHAIN_DIR="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain"
-          export PLATFORM_NAME=iphoneos
-          export SRCROOT="$PWD/apps/ipad/ios"
-          export CONTENTS_FOLDER_PATH="HomeClock.app"
-          export EXECUTABLE_PATH="HomeClock.app/HomeClock"
-          export PODS_ROOT="$PWD/apps/ipad/ios/Pods"
-          export PODS_CONFIGURATION_BUILD_DIR="$BUILT_PRODUCTS_DIR"
-          export CONFIGURATION_BUILD_DIR="$BUILT_PRODUCTS_DIR"
-          export TARGET_BUILD_DIR="$BUILT_PRODUCTS_DIR"
-          export CONFIGURATION=Release
-          export PODS_XCFRAMEWORKS_BUILD_DIR="$BUILT_PRODUCTS_DIR/XCFrameworkIntermediates"
-          export SCRIPTS_FOLDER_PATH="HomeClock.app"
-          export EXPANDED_CODE_SIGN_IDENTITY_NAME=""
-          export CODE_SIGN_ENTITLEMENTS=""
-          export DEVELOPER_DIR="$(xcode-select -p)
-          export CODE_SIGNING_ALLOWED=NO
-          export CODE_SIGN_IDENTITY=""
-          export CODE_SIGNING_REQUIRED=NO
-          export COPY_PHASE_STRIP=NO
-          export STRIP_INSTALLED_PRODUCT=NO
-          export STRIP_STYLE=all
-          export COCOAPODS_PARALLEL_CODE_SIGN=YES
-          export EXPANDED_CODE_SIGN_IDENTITY=""
-          bash "apps/ipad/ios/Pods/Target Support Files/Pods-HomeClock/Pods-HomeClock-frameworks.sh" 2>&1 | tail -40
-          echo "=== embedded frameworks ==="
+          mkdir -p "$APP/Frameworks"
+          echo "=== required dylibs ==="
+          otool -L "$APP/HomeClock" | grep "@rpath" | awk '{print $1}' | while read -r d; do
+            echo "$d"
+          done
+          echo "=== A) copy built frameworks from build tree ==="
+          find apps/ipad/ios/build -type d -name "*.framework" 2>/dev/null | while IFS= read -r fw; do
+            name=$(basename "$fw")
+            if [ ! -e "$APP/Frameworks/$name" ]; then
+              cp -R "$fw" "$APP/Frameworks/" 2>/dev/null || true
+            fi
+          done
+          echo "=== B) copy ios-arm64 slices from vendored xcframeworks in Pods ==="
+          find apps/ipad/ios/Pods -type d -name "*.xcframework" 2>/dev/null | while IFS= read -r xf; do
+            find "$xf" -type d -name "*.framework" -path "*ios-arm64*" 2>/dev/null | grep -v simulator | while IFS= read -r fw; do
+              name=$(basename "$fw")
+              if [ ! -e "$APP/Frameworks/$name" ]; then
+                echo "embed $name"
+                cp -R "$fw" "$APP/Frameworks/" 2>/dev/null || true
+              fi
+            done
+          done
+          echo "=== embedded now ==="
           ls "$APP/Frameworks"
+          echo "=== still missing? ==="
+          otool -L "$APP/HomeClock" | grep "@rpath" | awk '{print $1}' | while read -r d; do
+            fw=$(basename "$d" | cut -d/ -f1)
+            [ -e "$APP/Frameworks/$fw" ] || echo "MISSING: $fw"
+          done
           echo "=== count ==="
           ls "$APP/Frameworks" | wc -l
 
