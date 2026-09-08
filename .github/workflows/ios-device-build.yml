@@ -136,7 +136,14 @@ jobs:
           export PODS_CONFIGURATION_BUILD_DIR="$BUILT_PRODUCTS_DIR"
           export CONFIGURATION_BUILD_DIR="$BUILT_PRODUCTS_DIR"
           export TARGET_BUILD_DIR="$BUILT_PRODUCTS_DIR"
+          export CONFIGURATION=Release
           export CODE_SIGNING_ALLOWED=NO
+          export CODE_SIGN_IDENTITY=""
+          export CODE_SIGNING_REQUIRED=NO
+          export COPY_PHASE_STRIP=NO
+          export STRIP_INSTALLED_PRODUCT=NO
+          export STRIP_STYLE=all
+          export COCOAPODS_PARALLEL_CODE_SIGN=YES
           export EXPANDED_CODE_SIGN_IDENTITY=""
           bash "apps/ipad/ios/Pods/Target Support Files/Pods-HomeClock/Pods-HomeClock-frameworks.sh" 2>&1 | tail -40
           echo "=== embedded frameworks ==="
