@@ -130,7 +130,7 @@ jobs:
           export EXECUTABLE_PATH="HomeClock.app/HomeClock"
           export CODE_SIGNING_ALLOWED=NO
           export EXPANDED_CODE_SIGN_IDENTITY=""
-          bash "apps/ipad/ios/Pods/Target Support Files/Pods-HomeClock/Pods-HomeClock-frameworks.sh"
+          PODS_CONFIGURATION_BUILD_DIR="$BUILT_PRODUCTS_DIR" bash -x "apps/ipad/ios/Pods/Target Support Files/Pods-HomeClock/Pods-HomeClock-frameworks.sh" 2>&1 | tail -60
           echo "=== embedded frameworks ==="
           ls "$APP/Frameworks"
           echo "=== count ==="
