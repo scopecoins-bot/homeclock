@@ -126,7 +126,10 @@ jobs:
           otool -L "$APP/HomeClock" | grep -c "@rpath" || true
           echo "=== run Pods-HomeClock-frameworks.sh ==="
           export BUILT_PRODUCTS_DIR="$PWD/apps/ipad/ios/build/Build/Products/Release-iphoneos"
-          export FRAMEWORKS_FOLDER_PATH="$BUILT_PRODUCTS_DIR/HomeClock.app/Frameworks"
+          export FRAMEWORKS_FOLDER_PATH="HomeClock.app/Frameworks"
+          export TOOLCHAIN_DIR="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain"
+          export PLATFORM_NAME=iphoneos
+          export SRCROOT="$PWD/apps/ipad/ios"
           export CONTENTS_FOLDER_PATH="HomeClock.app"
           export EXECUTABLE_PATH="HomeClock.app/HomeClock"
           export PODS_ROOT="$PWD/apps/ipad/ios/Pods"
