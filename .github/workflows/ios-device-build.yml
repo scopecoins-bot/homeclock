@@ -105,12 +105,26 @@ jobs:
             CODE_SIGN_ENTITLEMENTS="" \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             EXPANDED_CODE_SIGN_IDENTITY="" \
-            build 2>&1 | tail -40
+            build > build/xcodebuild.log 2>&1 || true
           APP=build/Build/Products/Release-iphoneos/HomeClock.app
-          test -d "$APP" || { echo "::error::HomeClock.app not produced"; exit 1; }
+          if [ ! -d "$APP" ]; then
+            echo "=== BUILD FAILED: error lines ==="
+            grep -nE "error:|Error:|fatal|BUILD FAILED" build/xcodebuild.log | tail -40 || true
+            echo "=== last 80 lines ==="
+            tail -80 build/xcodebuild.log || true
+            exit 1
+          fi
           echo "--- binary ---"
           file "$APP/HomeClock"
           lipo -info "$APP/HomeClock"
+
+      - name: Upload raw xcodebuild log (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log-${{ github.run_number }}
+          path: apps/ipad/ios/build/xcodebuild.log
+          if-no-files-found: ignore
 
       - name: Ad-hoc sign with ldid (main binary + embedded frameworks)
         run: |
