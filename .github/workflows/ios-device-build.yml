@@ -137,6 +137,11 @@ jobs:
           export CONFIGURATION_BUILD_DIR="$BUILT_PRODUCTS_DIR"
           export TARGET_BUILD_DIR="$BUILT_PRODUCTS_DIR"
           export CONFIGURATION=Release
+          export PODS_XCFRAMEWORKS_BUILD_DIR="$BUILT_PRODUCTS_DIR/XCFrameworkIntermediates"
+          export SCRIPTS_FOLDER_PATH="HomeClock.app"
+          export EXPANDED_CODE_SIGN_IDENTITY_NAME=""
+          export CODE_SIGN_ENTITLEMENTS=""
+          export DEVELOPER_DIR="$(xcode-select -p)
           export CODE_SIGNING_ALLOWED=NO
           export CODE_SIGN_IDENTITY=""
           export CODE_SIGNING_REQUIRED=NO
