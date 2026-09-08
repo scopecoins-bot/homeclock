@@ -47,12 +47,13 @@ jobs:
         run: |
           set -euo pipefail
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          FOUND=$(find "$SDK" -maxdepth 6 -name "AlarmKit.framework" | head -1 || true)
-          if [ -z "$FOUND" ]; then
-            echo "::error::AlarmKit.framework not found in SDK"
-            exit 1
-          fi
-          echo "AlarmKit: $FOUND"
+          echo "SDK path: $SDK"
+          echo "--- locate AlarmKit ---"
+          find "$SDK" -name "AlarmKit*" 2>/dev/null | head -10 || true
+          echo "--- compile test (definitive) ---"
+          echo 'import AlarmKit; import Foundation; print("AlarmKit import OK")' | \
+            xcrun -sdk "$SDK" swift -target arm64-apple-ios26.0 -
+          echo "AlarmKit compiles against iphoneos SDK"
 
       - name: Setup Node
         uses: actions/setup-node@v4
