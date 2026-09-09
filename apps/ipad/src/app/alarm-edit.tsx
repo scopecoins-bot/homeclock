@@ -58,17 +58,21 @@ export default function AlarmEditScreen() {
   }
 
   async function onSave() {
-    await saveAlarm({
-      id: existing?.id,
-      hour: time.getHours(),
-      minute: time.getMinutes(),
-      label: label.trim(),
-      enabled: existing?.enabled ?? true,
-      weekdays,
-      sound,
-      snoozeMinutes: snooze,
-    });
-    router.back();
+    try {
+      await saveAlarm({
+        id: existing?.id,
+        hour: time.getHours(),
+        minute: time.getMinutes(),
+        label: label.trim(),
+        enabled: existing?.enabled ?? true,
+        weekdays,
+        sound,
+        snoozeMinutes: snooze,
+      });
+      router.back();
+    } catch (err) {
+      Alert.alert("Opslaan mislukt", String((err as Error).message || err));
+    }
   }
 
   async function onDelete() {

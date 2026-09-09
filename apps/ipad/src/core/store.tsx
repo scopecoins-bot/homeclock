@@ -367,11 +367,16 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
         storage.loadPairingDone(),
       ]);
       tokenRef.current = token;
-      const engine: AlarmEngine = isAlarmKitAvailable()
-        ? "alarmkit"
-        : token !== null || true
-          ? "notifications"
-          : "unknown";
+      const engine: AlarmEngine = isAlarmKitAvailable() ? "alarmkit" : "notifications";
+      // AlarmKit-toestemming actief vragen (systeemdialoog bij eerste start).
+      let auth = await safeAuth();
+      if (isAlarmKitAvailable() && auth !== "authorized") {
+        try {
+          auth = await AlarmNative.requestAuthorization();
+        } catch (err) {
+          // gebruiker weigerde of systeemfout; alarmscheduler geeft gedetailleerde fout
+        }
+      }
       patch({
         ready: true,
         alarms: local.alarms,

@@ -4,18 +4,23 @@ import { StatusBar } from "expo-status-bar";
 import * as KeepAwake from "expo-keep-awake";
 import { HomeClockProvider, useHomeClock } from "@/core/store";
 import { themeForHour } from "@/core/theme";
-import { themeForHour as _tfh } from "@/core/theme";
 
 function KeepAwakeAndRouting() {
   const { settings, ringingAlarm } = useHomeClock();
   const router = useRouter();
   const pathname = usePathname();
 
-  if (settings.ui.keepAwake) {
-    KeepAwake.useKeepAwake();
-  }
+  // Scherm wakker houden — alleen zolang de instelling aanstaat.
+  useEffect(() => {
+    if (!settings.ui.keepAwake) return;
+    let cancelled = false;
+    KeepAwake.activateKeepAwakeAsync().catch(() => {});
+    return () => {
+      if (!cancelled) KeepAwake.deactivateKeepAwake();
+    };
+  }, [settings.ui.keepAwake]);
 
-  // When an alarm rings, the ringing experience takes over the whole app.
+  // Wanneer een alarm rinkelt neemt het ringing-scherm de app over.
   useEffect(() => {
     if (ringingAlarm && pathname !== "/ringing") {
       router.replace("/ringing");

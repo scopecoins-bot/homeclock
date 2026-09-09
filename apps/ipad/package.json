@@ -1,6 +1,6 @@
 {
   "name": "ipad",
-  "main": "expo-router/entry",
+  "main": "./entry-app.js",
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.16",
