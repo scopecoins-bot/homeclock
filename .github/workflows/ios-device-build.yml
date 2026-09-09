@@ -178,6 +178,7 @@ jobs:
           set -euo pipefail
           brew install ldid
           APP=apps/ipad/ios/build/Build/Products/Release-iphoneos/HomeClock.app
+          BUILT=apps/ipad/ios/build/Build/Products/Release-iphoneos
           # sign every executable inside the bundle, main binary last
           find "$APP" -type f \( -name "*.dylib" -o -path "*.framework/*" \) | while read -r f; do
             if file "$f" | grep -q "Mach-O"; then
