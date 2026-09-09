@@ -32,3 +32,6 @@ npm-debug.log*
 Thumbs.db
 artifacts/
 hc-crash.ips
+hc-crash*.ips
+expo-export/
+test-minimal.js
