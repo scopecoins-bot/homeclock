@@ -35,3 +35,4 @@ hc-crash.ips
 hc-crash*.ips
 expo-export/
 test-minimal.js
+apps/ipad/staging-main.jsbundle
