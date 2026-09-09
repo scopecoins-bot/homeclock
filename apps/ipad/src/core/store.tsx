@@ -41,6 +41,7 @@ export interface HomeClockState {
   nativeAlarmCount: number;
   ringingAlarm: Alarm | null;
   somtodayState: string | null;
+  lastNativeError: string | null;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -89,6 +90,7 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
     nativeAlarmCount: 0,
     ringingAlarm: null,
     somtodayState: null,
+    lastNativeError: null,
   });
 
   const tokenRef = useRef<string | null>(null);
@@ -113,16 +115,18 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  /** Reconcile native alarms with desired state — only touch what changed. */
+  /** Reconcile native alarms with desired state — only touch what changed.
+   *  Fouten worden NIET meer stil verworpen: laatste fout wordt getoond. */
   const reconcileNative = useCallback(
     async (alarms: Alarm[]) => {
       const current = await nativeSnapshot();
       const diff = diffAlarms(current, alarms);
+      let lastError: string | null = null;
       for (const id of diff.toCancel) {
         try {
           await AlarmNative.cancelAlarm(id);
-        } catch {
-          // keep going; next reconcile retries
+        } catch (err) {
+          lastError = "cancel: " + String((err as Error).message || err);
         }
       }
       for (const alarm of diff.toSchedule) {
@@ -136,12 +140,18 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
             snoozeMinutes: alarm.snoozeMinutes,
             sound: alarm.sound,
           });
-        } catch {
-          // keep going; next reconcile retries
+        } catch (err) {
+          lastError = "schedule: " + String((err as Error).message || err);
         }
       }
       const count = (await nativeSnapshot()).length;
-      patch({ nativeAlarmCount: count });
+      patch({ nativeAlarmCount: count, lastNativeError: lastError });
+      if (lastError) {
+        try {
+          const { Alert } = require("react-native");
+          Alert.alert("AlarmKit-fout", lastError);
+        } catch {}
+      }
     },
     [nativeSnapshot, patch],
   );

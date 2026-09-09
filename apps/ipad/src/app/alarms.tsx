@@ -12,7 +12,7 @@ export default function AlarmsScreen() {
   const now = useClock();
   const theme = useTheme(now);
   const router = useRouter();
-  const { alarms, toggleAlarm, nativeAlarmCount, alarmEngine } = useHomeClock();
+  const { alarms, toggleAlarm, nativeAlarmCount, alarmEngine, lastNativeError } = useHomeClock();
 
   const sorted = [...alarms].sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute));
 
@@ -28,6 +28,11 @@ export default function AlarmsScreen() {
                   ? `AlarmKit · ${nativeAlarmCount} gepland`
                   : `Fallback notificaties · ${nativeAlarmCount} gepland`}
               </Text>
+              {lastNativeError && (
+                <Text style={{ color: theme.danger, fontSize: 12, maxWidth: 320 }} numberOfLines={3}>
+                  {lastNativeError}
+                </Text>
+              )}
               <Pressable
                 accessibilityLabel="Nieuw alarm"
                 onPress={() => router.push({ pathname: "/alarm-edit", params: { new: "1" } })}
