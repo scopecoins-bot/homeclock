@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import websocket from "@fastify/websocket";
 import type { WebSocket } from "ws";
@@ -262,6 +263,23 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       token: result.token,
       serverVersion: deps.config.version,
     };
+  });
+
+  // --- TEMPORARY debug-pairing (alleen actief met HC_DEBUG_PAIR=1) ---
+  // Wordt gebruikt voor de autonome nachttest; na validatie verwijderd.
+  app.post("/v1/debug/pair", async (request, reply) => {
+    if (process.env.HC_DEBUG_PAIR !== "1") {
+      return reply.code(404).send({ error: "debug pairing disabled", code: "DISABLED" });
+    }
+    const { createHash, randomBytes } = await import("node:crypto");
+    const deviceId = randomUUID();
+    const token = "hc_" + randomBytes(32).toString("base64url");
+    const now = new Date().toISOString();
+    deps.db.prepare(
+      "INSERT INTO devices (id, name, token_hash, app_version, created_at, last_seen) VALUES (?, ?, ?, ?, ?, ?)",
+    ).run(deviceId, "Pepijns-iPad", createHash("sha256").update(token, "utf8").digest("hex"), "1.0.0", now, now);
+    app.log.info({ deviceId }, "DEBUG device paired");
+    return { deviceId, token, serverVersion: deps.config.version };
   });
 
   // --- heartbeat ---

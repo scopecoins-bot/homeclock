@@ -146,6 +146,10 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
       }
       const count = (await nativeSnapshot()).length;
       patch({ nativeAlarmCount: count, lastNativeError: lastError });
+      void storage.appendDebugLog(
+        "reconcile: cancel=" + diff.toCancel.length + " schedule=" + diff.toSchedule.length +
+          " count=" + count + (lastError ? " FOUT=" + lastError : ""),
+      );
       if (lastError) {
         try {
           const { Alert } = require("react-native");
@@ -257,8 +261,12 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
   // ---------- sync ----------
   const syncNow = useCallback(async () => {
     const a = api;
-    if (!a) return;
+    if (!a) {
+      void storage.appendDebugLog("sync: geen api (niet gekoppeld)");
+      return;
+    }
     patch({ connection: "connecting" });
+    void storage.appendDebugLog("sync: start");
     try {
       const [local, serverStatus, remoteAlarms, dash, remoteSettings, weather] = await Promise.all([
         storage.loadAlarms(),
@@ -295,6 +303,10 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
         // heartbeat is best-effort
       }
 
+      void storage.appendDebugLog(
+        "sync: OK alarmen=" + merged.alarms.length + " lessen=" + dash.today.lessons.length +
+          " somtoday=" + serverStatus.somtoday.state,
+      );
       patch({
         connection: "connected",
         alarms: merged.alarms,
@@ -402,6 +414,38 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
         // pairing wizard not implemented as separate screen: settings handles it
         somtodayState: null,
       });
+      // TEMPORARY debuglog (nacht-test): status naar AsyncStorage
+      void storage.appendDebugLog(
+        "init: engine=" + engine + " auth=" + (await safeAuth()) + " nativeCount=" + (await nativeSnapshot()).length,
+      );
+
+      // TEMPORARY auto-pair (nacht-test, wordt na validatie verwijderd):
+      if (!token) {
+        try {
+          await storage.appendDebugLog("autopair: poging naar " + (endpoint ?? DEFAULT_ENDPOINT));
+          const res = await fetch(
+            (endpoint ?? DEFAULT_ENDPOINT).replace(/\/$/, "") + "/v1/debug/pair",
+            {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ deviceName: "Pepijns-iPad" }),
+            },
+          );
+          const data = await res.json();
+          if (data && data.token) {
+            await storage.saveToken(data.token);
+            await storage.saveEndpoint(endpoint ?? DEFAULT_ENDPOINT);
+            tokenRef.current = data.token;
+            patch({ endpoint: endpoint ?? DEFAULT_ENDPOINT, hasToken: true });
+            await storage.appendDebugLog("autopair: OK deviceId=" + data.deviceId);
+          } else {
+            await storage.appendDebugLog("autopair: geen token in response " + JSON.stringify(data).slice(0, 200));
+          }
+        } catch (err) {
+          await storage.appendDebugLog("autopair: fout " + String((err as Error).message).slice(0, 200));
+        }
+      }
+
       void syncNow();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -440,6 +484,7 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const sub = AlarmNative.addListener?.("onAlarmStateChange", (event: { alarmId: string | null; state: string }) => {
       if (event.state === "ringing") {
+        void storage.appendDebugLog("RINGING alarmId=" + String(event.alarmId));
         const alarm = state.alarms.find((a) => a.id === event.alarmId) ?? null;
         patch({ ringingAlarm: alarm });
       } else if (event.state === "stopped") {

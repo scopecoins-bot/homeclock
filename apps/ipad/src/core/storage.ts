@@ -96,6 +96,24 @@ export const storage = {
     }
   },
 
+  async readDebugLog(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem("hc.debuglog");
+    } catch {
+      return null;
+    }
+  },
+  async appendDebugLog(line: string): Promise<void> {
+    try {
+      const prev = (await AsyncStorage.getItem("hc.debuglog")) ?? "";
+      await AsyncStorage.setItem(
+        "hc.debuglog",
+        (prev + "\n" + new Date().toISOString() + " " + line).slice(-4000),
+      );
+    } catch {
+      // storage zelf kapot: niets doen
+    }
+  },
   async loadPairingDone(): Promise<boolean> {
     return (await AsyncStorage.getItem(KEYS.pairingDone)) === "1";
   },
