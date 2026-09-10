@@ -188,4 +188,6 @@ export function connectEvents(
 }
 
 export { DEFAULT_ENDPOINT };
-const DEFAULT_ENDPOINT = "https://bossp.tail7c0b14.ts.net:8788";
+// TEMP nachttest: hotspot-tunnel via de PC (portproxy -> bossp HTTP serve).
+// Morgen terug naar: https://bossp.tail7c0b14.ts.net:8788
+const DEFAULT_ENDPOINT = "http://192.168.137.1:8789";

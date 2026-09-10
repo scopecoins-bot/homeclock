@@ -14,7 +14,10 @@
       "supportsTablet": true,
       "requireFullScreen": true,
       "infoPlist": {
-        "NSAlarmKitUsageDescription": "HomeClock gebruikt AlarmKit om je wekkers betrouwbaar te laten afgaan, ook als de app gesloten is."
+        "NSAlarmKitUsageDescription": "HomeClock gebruikt AlarmKit om je wekkers betrouwbaar te laten afgaan, ook als de app gesloten is.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {

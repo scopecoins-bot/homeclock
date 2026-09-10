@@ -1,0 +1,10 @@
+23:59 geen contact deze ronde
+00:16 geen contact deze ronde
+00:32 geen contact deze ronde
+00:48 geen contact deze ronde — self-restart
+19:17 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+19:36 installatie-ronde afgerond — herstart over 2 min
+19:38 ONLINE: 192.168.137.149 — volledige installatie
