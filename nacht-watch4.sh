@@ -2,7 +2,7 @@
 # Nacht-watcher v4: de beslissende experimenten-reeks.
 cd "C:/Users/Gebruiker/.zcode/workspace/default/homeclock"
 STATUS="C:/Users/Gebruiker/.zcode/workspace/default/homeclock/nacht-status.txt"
-ART="C:/Users/Gebruiker/.zcode/workspace/default/homeclock/artifacts/homeclock-ios-26"
+ART="C:/Users/Gebruiker/.zcode/workspace/default/homeclock/artifacts/homeclock-ios-28"
 IPAD="C:/Users/Gebruiker/.zcode/workspace/default/homeclock/ipad-ip.txt"
 
 while true; do
