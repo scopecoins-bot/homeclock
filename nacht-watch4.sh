@@ -23,7 +23,23 @@ while true; do
     scp -q -o StrictHostKeyChecking=accept-new "$ART/nl.krimson.homeclock.deb" mobile@$FOUND:/var/mobile/HomeClock.deb 2>/dev/null
     scp -q -o StrictHostKeyChecking=accept-new apps/ipad/local-app2.hbc no-container.plist /tmp/local-assets.tgz mobile@$FOUND:/var/mobile/ 2>/dev/null
 
-    ssh -o StrictHostKeyChecking=accept-new mobile@$FOUND 'bash -s' >> "$STATUS" 2>&1 <<'REMOTE'
+    ssh -o StrictHostKeyChecking=accept-new mobile@$FOUND 'bash -s' 2>&1 <<'REMOTE' | grep -v "zsh/watch" >> "$STATUS"
+PW=pep
+S() { echo "$PW" | sudo -S sh -c "$1" 2>/dev/null; }
+APP=/var/jb/Applications/HomeClock.app
+S "killall HomeClock" 2>/dev/null
+sleep 1
+S "cp $APP/main.jsbundle.ci $APP/main.jsbundle 2>/dev/null || true"
+ldid -S/var/mobile/no-container.plist $APP/HomeClock && echo "resign: OK"
+S "killall HomeClock" 2>/dev/null
+sleep 1
+uicache -p $APP 2>/dev/null
+uiopen --bundleid nl.krimson.homeclock
+sleep 18
+echo "PROCES: $(ps aux | grep -i [H]omeClock | grep -v zsh | grep -v grep | wc -l)"
+CONT=$(find /var/mobile/Containers/Data/Application -maxdepth 4 -name ".com.apple.mobile_container_manager.metadata.plist" 2>/dev/null | xargs grep -l "nl.krimson.homeclock" 2>/dev/null | head -1 | xargs dirname)
+ls "$CONT/Library/AsyncStorage/" 2>/dev/null | head -3 && echo "RESULT: RKStorage AANGEMAAKT — STORAGE WERKT" || echo "RESULT: nog niet aangemaakt"
+REMOTE'
 PW=pep
 S() { echo "$PW" | sudo -S sh -c "$1" 2>/dev/null; }
 M() { echo "$PW" | sudo -S -u mobile sh -c "$1" 2>/dev/null; }
@@ -34,6 +50,8 @@ S "dpkg -i /var/mobile/HomeClock.deb" 2>&1 | tail -1
 S "chmod 755 $APP/HomeClock"
 S "find $APP/Frameworks -type f \( -name '*.dylib' -o ! -name '*.*' \) -exec chmod 755 {} \; 2>/dev/null"
 
+echo "===== STAP 1b: Info.plist AlarmKit key aanwezig? ====="
+S "grep -ac NSAlarmKitUsageDescription $APP/Info.plist"
 echo "===== STAP 2: container + dirs vooraf ====="
 CONT=$(find /var/mobile/Containers/Data/Application -maxdepth 4 -name ".com.apple.mobile_container_manager.metadata.plist" 2>/dev/null | xargs grep -l "nl.krimson.homeclock" 2>/dev/null | head -1 | xargs dirname)
 echo "container: $CONT"
@@ -58,7 +76,7 @@ ls -t /var/mobile/Library/Logs/CrashReporter/HomeClock*.ips 2>/dev/null | head -
 echo "===== STAP 4: debug-bundel (lokaal gebouwd + assets) ====="
 S "cp $APP/main.jsbundle $APP/main.jsbundle.ci"
 S "cp /var/mobile/local-app2.hbc $APP/main.jsbundle"
-S "cd /var/mobile && tar xzf local-assets.tgz -C /var/jb/Applications/HomeClock.app/ 2>/dev/null"
+S "tar xzf /var/mobile/local-assets.tgz -C /var/jb/Applications/HomeClock.app/ --strip-components=1" 2>/dev/null
 S "killall HomeClock" 2>/dev/null
 sleep 1
 uiopen --bundleid nl.krimson.homeclock

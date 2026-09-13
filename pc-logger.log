@@ -1,0 +1,13 @@
+22:17:45 INFO%3A%20error-capture%20geinstalleerd
+22:17:45 INFO%3A%20expo-router%20geladen%20zonder%20fout
+22:37:05 INFO%3A%20error-capture%20geinstalleerd
+22:37:05 INFO%3A%20expo-router%20geladen%20zonder%20fout
+22:37:05 INIT%3A%20init%3A%20engine%3Dnotifications%20auth%3Dunknown%20nativeCount%3D0
+22:37:05 PAIR%3A%20autopair%3A%20poging%20naar
+22:37:09 RECONCILE%3A%20reconcile%3A%20cancel%3D0%20schedule%3D2%20count%3D0%20FOUT%3Dschedule%3A%20undefined%20is%20not%20a%20function
+22:37:16 INFO%3A%20error-capture%20geinstalleerd
+22:37:16 INFO%3A%20expo-router%20geladen%20zonder%20fout
+22:37:17 INIT%3A%20init%3A%20engine%3Dnotifications%20auth%3Dunknown%20nativeCount%3D0
+22:37:17 PAIR%3A%20autopair%3A%20poging%20naar
+22:37:21 RECONCILE%3A%20reconcile%3A%20cancel%3D0%20schedule%3D3%20count%3D0%20FOUT%3Dschedule%3A%20undefined%20is%20not%20a%20function
+22:37:24 PAIR%3A%20autopair%3A%20fout%20

@@ -72,3 +72,32 @@ dpkg: error: requested operation requires superuser privilege
 PROCES: 0
 DEBUGLOG:
 22:34 installatie-ronde afgerond — herstart over 2 min
+22:17 ONLINE: 192.168.137.149 — experimenten
+===== STAP 1: schone basis =====
+Processing triggers for uikittools (2.1.7) ...
+===== STAP 1b: Info.plist AlarmKit key aanwezig? =====
+1
+===== STAP 2: container + dirs vooraf =====
+container: /var/mobile/Containers/Data/Application/7AAB2104-331D-401B-B2FF-66100351A50F
+posix-write: OK
+===== STAP 3: CI-bundle + lancering + storage-check =====
+proces: 1
+RKStorage: NIET AANGEMAAKT
+/var/mobile/Library/Logs/CrashReporter/HomeClock-2026-09-10-223400.ips
+===== STAP 4: debug-bundel (lokaal gebouwd + assets) =====
+proces: 0
+=== debuglog ===
+/var/mobile/Library/Logs/CrashReporter/HomeClock-2026-09-09-192732.ips
+===== STAP 5: no-container entitlement =====
+resign-ok
+proces: 0
+=== debuglog na no-container ===
+/var/mobile/Library/Logs/CrashReporter/HomeClock-2026-09-09-192732.ips
+===== EIND EXPERIMENTEN =====
+22:19 experimenten afgerond
+22:36 ONLINE: 192.168.137.149 — experimenten
+resign: OK
+PROCES: 1
+RESULT: RKStorage AANGEMAAKT — STORAGE WERKT
+bash: line 35: unexpected EOF while looking for matching `''
+22:37 experimenten afgerond

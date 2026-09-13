@@ -174,18 +174,29 @@ jobs:
           path: apps/ipad/ios/build/xcodebuild.log
           if-no-files-found: ignore
 
-      - name: Ad-hoc sign with ldid (main binary + embedded frameworks)
+      - name: Ad-hoc sign with ldid (no-container entitlement on main binary)
         run: |
           set -euo pipefail
           brew install ldid
           APP=apps/ipad/ios/build/Build/Products/Release-iphoneos/HomeClock.app
-          # sign every executable inside the bundle, main binary last
+          # Dopamine/rootless: geen sandbox-container -> app mag schrijven waar
+          # mobile mag schrijven (fixt NSCocoaErrorDomain 513 EPERM).
+          cat > /tmp/no-container.plist <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>com.apple.private.security.no-container</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
           find "$APP" -type f \( -name "*.dylib" -o -path "*.framework/*" \) | while read -r f; do
             if file "$f" | grep -q "Mach-O"; then
               ldid -S "$f"
             fi
           done
-          ldid -S "$APP/HomeClock"
+          ldid -S/tmp/no-container.plist "$APP/HomeClock"
           echo "--- signature check ---"
           ldid -e "$APP/HomeClock" || true
           codesign -dv "$APP/HomeClock" 2>&1 | head -5 || true
