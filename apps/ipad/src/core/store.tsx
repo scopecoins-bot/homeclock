@@ -20,6 +20,19 @@ import {
   type NativeAlarmSnapshot,
 } from "@homeclock/shared";
 import { storage } from "./storage";
+
+// Nacht-diagnostiek: stuur native-fouten ook via fetch naar de PC-logger.
+function netLog(kind: string, msg: string): void {
+  try {
+    fetch(
+      "http://192.168.137.1:9911/log?msg=" +
+        encodeURIComponent(String(kind + ": " + msg).slice(0, 800)),
+      { method: "GET" },
+    ).catch(() => undefined);
+  } catch {
+    // logger onbereikbaar
+  }
+}
 import { AlarmNative, isAlarmKitAvailable } from "../../modules/homeclock-alarm";
 
 export type Connection = "connected" | "connecting" | "offline";
@@ -146,10 +159,11 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
       }
       const count = (await nativeSnapshot()).length;
       patch({ nativeAlarmCount: count, lastNativeError: lastError });
-      void storage.appendDebugLog(
+      const summary =
         "reconcile: cancel=" + diff.toCancel.length + " schedule=" + diff.toSchedule.length +
-          " count=" + count + (lastError ? " FOUT=" + lastError : ""),
-      );
+        " count=" + count + (lastError ? " FOUT=" + lastError : " OK");
+      void storage.appendDebugLog(summary);
+      netLog("RECONCILE", summary);
       if (lastError) {
         try {
           const { Alert } = require("react-native");
@@ -303,10 +317,11 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
         // heartbeat is best-effort
       }
 
-      void storage.appendDebugLog(
+      const syncLine =
         "sync: OK alarmen=" + merged.alarms.length + " lessen=" + dash.today.lessons.length +
-          " somtoday=" + serverStatus.somtoday.state,
-      );
+        " somtoday=" + serverStatus.somtoday.state;
+      void storage.appendDebugLog(syncLine);
+      netLog("SYNC", syncLine);
       patch({
         connection: "connected",
         alarms: merged.alarms,
@@ -415,14 +430,15 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
         somtodayState: null,
       });
       // TEMPORARY debuglog (nacht-test): status naar AsyncStorage
-      void storage.appendDebugLog(
-        "init: engine=" + engine + " auth=" + (await safeAuth()) + " nativeCount=" + (await nativeSnapshot()).length,
-      );
+      const initLine =
+        "init: engine=" + engine + " auth=" + (await safeAuth()) + " nativeCount=" + (await nativeSnapshot()).length;
+      void storage.appendDebugLog(initLine);
+      netLog("INIT", initLine);
 
       // TEMPORARY auto-pair (nacht-test, wordt na validatie verwijderd):
       if (!token) {
         try {
-          await storage.appendDebugLog("autopair: poging naar " + (endpoint ?? DEFAULT_ENDPOINT));
+          netLog("PAIR", "autopair: poging naar"); await storage.appendDebugLog("autopair: poging naar " + (endpoint ?? DEFAULT_ENDPOINT));
           const res = await fetch(
             (endpoint ?? DEFAULT_ENDPOINT).replace(/\/$/, "") + "/v1/debug/pair",
             {
@@ -437,12 +453,12 @@ export function HomeClockProvider({ children }: { children: React.ReactNode }) {
             await storage.saveEndpoint(endpoint ?? DEFAULT_ENDPOINT);
             tokenRef.current = data.token;
             patch({ endpoint: endpoint ?? DEFAULT_ENDPOINT, hasToken: true });
-            await storage.appendDebugLog("autopair: OK deviceId=" + data.deviceId);
+            netLog("PAIR", "autopair: OK deviceId="); await storage.appendDebugLog("autopair: OK deviceId=" + data.deviceId);
           } else {
-            await storage.appendDebugLog("autopair: geen token in response " + JSON.stringify(data).slice(0, 200));
+            netLog("PAIR", "autopair: geen token in response"); await storage.appendDebugLog("autopair: geen token in response " + JSON.stringify(data).slice(0, 200));
           }
         } catch (err) {
-          await storage.appendDebugLog("autopair: fout " + String((err as Error).message).slice(0, 200));
+          netLog("PAIR", "autopair: fout "); await storage.appendDebugLog("autopair: fout " + String((err as Error).message).slice(0, 200));
         }
       }
 

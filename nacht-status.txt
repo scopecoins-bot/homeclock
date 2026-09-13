@@ -8,3 +8,67 @@ PROCES: 0
 DEBUGLOG:
 19:36 installatie-ronde afgerond — herstart over 2 min
 19:38 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+Read from remote host 192.168.137.149: Connection reset by peer
+client_loop: send disconnect: Connection reset by peer
+21:38 installatie-ronde afgerond — herstart over 2 min
+22:04 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:04 installatie-ronde afgerond — herstart over 2 min
+22:06 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:07 installatie-ronde afgerond — herstart over 2 min
+22:09 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:09 installatie-ronde afgerond — herstart over 2 min
+22:11 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:11 installatie-ronde afgerond — herstart over 2 min
+22:13 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:14 installatie-ronde afgerond — herstart over 2 min
+22:16 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:16 installatie-ronde afgerond — herstart over 2 min
+22:18 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:19 installatie-ronde afgerond — herstart over 2 min
+22:21 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:21 installatie-ronde afgerond — herstart over 2 min
+22:23 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:23 installatie-ronde afgerond — herstart over 2 min
+22:29 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:29 installatie-ronde afgerond — herstart over 2 min
+22:31 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:31 installatie-ronde afgerond — herstart over 2 min
+22:33 ONLINE: 192.168.137.149 — volledige installatie
+dpkg: error: requested operation requires superuser privilege
+PROCES: 0
+DEBUGLOG:
+22:34 installatie-ronde afgerond — herstart over 2 min
